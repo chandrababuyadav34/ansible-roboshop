@@ -15,7 +15,7 @@
 
   - name: create app directory
     ansible.builtin.file:
-      path: /App
+      path: /app
       state: directory
 
   - name: create roboshop user

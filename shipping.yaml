@@ -1,23 +1,28 @@
-- name: configure Shipping server
+
+- name: configure shipping component
+  hosts: shipping
   become: yes
-  hosts: Shipping
   tasks:
   - name: install maven and mysql
     ansible.builtin.dnf:
       name: "{{ item }}"
-      state: present
+      state: installed
     loop:
-      - maven
-      - mysql
-
-  - name: PyMysql and cryptography
+    - maven
+    - mysql
+    
+  - name: install PyMySQL and cryptography 
     ansible.builtin.pip:
       name: "{{ item }}"
-      state: installed
       executable: pip3.9
     loop:
-      -PyMysql
-      -cryptography 
+    - cryptography
+    - PyMySQL
+
+  - name: create app directory
+    ansible.builtin.file:
+      path: /app
+      state: directory
 
   - name: create roboshop system user
     ansible.builtin.user:
@@ -38,14 +43,14 @@
       remote_src: yes
 
   - name: install maven dependencies
-    ansibile.builtin.command: mvn clean package
+    ansible.builtin.command: mvn clean package
     args:
       chdir: /app
 
   - name: rename jar file
     ansible.builtin.command: mv target/shipping-1.0.jar shipping.jar
     args:
-      chdir: /app 
+      chdir: /app
 
   - name: copy shipping service
     ansible.builtin.copy:
@@ -62,14 +67,23 @@
       state: started
       enabled: yes
 
+  # - name: connect to mysql using app user
+  #   community.mysql.mysql_info:
+  #     login_user: shipping
+  #     login_password: RoboShop@1
+  #     login_host: mysql.daws84s.site
+  #     login_db: cities
+
   - name: import data
+    tags:
+    - import
     community.mysql.mysql_db:
       name: all
       login_user: root
       login_password: RoboShop@1
       login_host: mysql.chandu.fun
       state: import
-      target: "{{ item }}
+      target: "{{ item }}"
     loop:
     - /app/db/schema.sql
     - /app/db/app-user.sql
@@ -79,5 +93,7 @@
     ansible.builtin.service:
       state: restarted
       name: shipping
+  
 
-                        
+
+  
